@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ôn Tập Sinh Học & Di Truyền Y Học - ĐHYHN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Soft blue-gray background */
+        }
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .option-btn.correct {
+            border-color: #22c55e !important;
+            background-color: #dcfce7 !important;
+            color: #166534 !important;
+        }
+        .option-btn.incorrect {
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+        }
+        .disabled-option {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-700 text-white shadow-md sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+                Ôn Tập Y Khoa
+            </h1>
+            <div id="header-score" class="hidden font-semibold bg-blue-800 px-3 py-1 rounded-full border border-blue-500">
+                Điểm: <span id="score-display">0/0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto w-full p-4 flex flex-col gap-6 mt-4">
+        
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="bg-white rounded-xl shadow-lg p-6 md:p-8 w-full max-w-2xl mx-auto border-t-4 border-blue-600">
+            <h2 class="text-2xl font-bold text-blue-900 mb-6 border-b pb-2">Cấu hình bài ôn tập</h2>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Chủ đề ôn tập</label>
+                    <select id="category-select" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-gray-50">
+                        <option value="all">Tất cả kiến thức (100 câu)</option>
+                        <option value="Sinh học tế bào">Sinh học tế bào</option>
+                        <option value="Hóa sinh - Sinh học phân tử">Hóa sinh - Sinh học phân tử</option>
+                        <option value="Di truyền y học">Di truyền y học</option>
+                        <option value="Sinh học phát triển">Sinh học phát triển</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                    <label for="shuffle-questions" class="font-medium text-gray-700 cursor-pointer select-none">Xáo trộn thứ tự câu hỏi</label>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="shuffle-questions" checked class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-6 checked:border-blue-600"/>
+                        <label for="shuffle-questions" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                    <label for="shuffle-answers" class="font-medium text-gray-700 cursor-pointer select-none">Xáo trộn đáp án (A,B,C,D)</label>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="shuffle-answers" checked class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-6 checked:border-blue-600"/>
+                        <label for="shuffle-answers" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+
+                <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors mt-4 text-lg">
+                    Bắt đầu ôn tập
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden flex-col gap-4">
+            
+            <!-- Progress & Nav Top -->
+            <div class="bg-white rounded-xl shadow p-4 flex justify-between items-center border-l-4 border-blue-500">
+                <button onclick="endQuiz()" class="text-sm text-gray-500 hover:text-red-600 font-medium transition-colors">
+                    &larr; Kết thúc / Cài đặt lại
+                </button>
+                <div class="font-bold text-blue-900 bg-blue-100 px-4 py-1 rounded-full" id="question-counter">
+                    Câu 1 / 50
+                </div>
+            </div>
+
+            <!-- Main Question Card -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span id="q-category" class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-100 px-2 py-1 rounded">Category</span>
+                    </div>
+                    
+                    <h3 id="question-text" class="text-lg md:text-xl font-semibold text-gray-800 mb-6 leading-relaxed">
+                        Nội dung câu hỏi sẽ hiển thị ở đây?
+                    </h3>
+
+                    <div id="options-container" class="space-y-3">
+                        <!-- Options injected via JS -->
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button id="check-btn" onclick="checkAnswer()" disabled class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-sm">
+                            Kiểm tra
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Explanation Box -->
+                <div id="explanation-box" class="hidden bg-blue-50 border-t border-blue-100 p-6">
+                    <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        Giải thích chi tiết
+                    </h4>
+                    <p id="explanation-text" class="text-gray-700 text-sm md:text-base leading-relaxed"></p>
+                </div>
+            </div>
+
+            <!-- Navigation Bottom -->
+            <div class="flex justify-between items-center mt-2">
+                <button id="prev-btn" onclick="navigate(-1)" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-6 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    &larr; Câu trước
+                </button>
+                <button id="next-btn" onclick="navigate(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Câu tiếp theo &rarr;
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom toggle CSS logic -->
+    <style>
+        .toggle-checkbox:checked { right: 0; border-color: #2563eb; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #bfdbfe; }
+    </style>
+
+<script>
+// --- DATASET: 45 HIGH QUALITY QUESTIONS ---
+const originalQuestions = [
+    // --- Sinh học tế bào ---
+    {
+        category: "Sinh học tế bào",
+        question: "Hoạt động của bơm Na-K (Na+/K+-ATPase) ở màng tế bào diễn ra như thế nào?",
+        options: [
+            "Đưa 3 ion Na+ đi ra khỏi tế bào và 2 ion K+ đi vào tế bào.",
+            "Đưa 2 ion Na+ đi ra khỏi tế bào và 3 ion K+ đi vào tế bào.",
+            "Đưa 3 ion Na+ đi vào tế bào và 2 ion K+ đi ra khỏi tế bào.",
+            "Đưa 2 ion Na+ đi vào tế bào và 3 ion K+ đi ra khỏi tế bào."
+        ],
+        correctIndex: 0,
+        explanation: "Bơm Na-K là một protein màng vận chuyển chủ động tiêu tốn ATP. Cứ mỗi phân tử ATP bị thủy phân, bơm đưa 3 ion Na+ ra ngoài tế bào và 2 ion K+ vào trong tế bào, giúp duy trì điện thế màng và áp suất thẩm thấu."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Chức năng chính của Lưới nội sinh chất nhẵn (SER) là gì?",
+        options: [
+            "Tổng hợp lipid, chuyển hóa carbohydrate và giải độc tế bào.",
+            "Tổng hợp protein tiết và protein màng.",
+            "Tiêu hóa nội bào và phân giải các đại phân tử.",
+            "Sản xuất ATP cung cấp năng lượng cho tế bào."
+        ],
+        correctIndex: 0,
+        explanation: "Lưới nội sinh chất nhẵn không có ribosome bám trên màng. Chức năng chính của nó là sinh tổng hợp lipid (phospholipid, cholesterol), giải độc (đặc biệt ở tế bào gan), chuyển hóa đường và dự trữ ion Canxi (ở tế bào cơ)."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Bào quan nào chứa nhiều loại enzym thủy phân hoạt động tối ưu ở môi trường acid (pH ~ 5)?",
+        options: [
+            "Tiêu thể (Lysosome).",
+            "Bộ máy Golgi.",
+            "Peroxisome.",
+            "Không bào."
+        ],
+        correctIndex: 0,
+        explanation: "Tiêu thể (Lysosome) là túi màng đơn chứa các enzym thủy phân (hydrolase) như protease, nuclease, lipase. Các enzym này chỉ hoạt động mạnh ở pH acid (~5) bên trong tiêu thể để tiêu hóa thức ăn nội bào hoặc tiêu hủy bào quan già cỗi."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Đặc điểm di truyền của ty thể ở người có tính chất gì nổi bật?",
+        options: [
+            "Di truyền theo dòng mẹ và có tính nửa tự trị.",
+            "Di truyền theo dòng bố và hoàn toàn phụ thuộc vào nhân tế bào.",
+            "Di truyền theo quy luật Mendel phân ly độc lập.",
+            "Chỉ mã hóa toàn bộ protein cần thiết cho hô hấp tế bào mà không cần nhân."
+        ],
+        correctIndex: 0,
+        explanation: "Ty thể chứa ADN riêng (mtDNA), tự nhân đôi và tổng hợp một số protein (tính nửa tự trị). Khi thụ tinh, tinh trùng chỉ đóng góp nhân, trong khi noãn bào chứa ty thể, do đó bệnh do đột biến gen ty thể chỉ di truyền từ mẹ sang con (di truyền theo dòng mẹ)."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Sự chết tế bào có chương trình (Apoptosis) KHÔNG có biểu hiện nào sau đây?",
+        options: [
+            "Tế bào trương phồng lên, màng nứt rách và vỡ tung gây viêm.",
+            "Sự teo nhân, nhiễm sắc chất (chromatin) kết đặc lại.",
+            "Tan rã khung xương tế bào.",
+            "Màng tế bào sần sùi, tạo các thể apoptotic lôi cuốn đại thực bào."
+        ],
+        correctIndex: 0,
+        explanation: "Apoptosis là quá trình tế bào chết êm ả: tế bào co lại, nhân kết đặc, phân cắt ADN, tạo thể apoptotic bị thực bào nuốt, KHÔNG rách màng và KHÔNG gây viêm. Hiện tượng tế bào trương phồng, vỡ tung và gây viêm là đặc điểm của hoại tử (Necrosis)."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Đặc điểm của tế bào toàn năng (Totipotent) là gì?",
+        options: [
+            "Có khả năng biệt hóa tốt nhất, có thể phát triển thành một cơ thể hoàn chỉnh.",
+            "Chỉ có thể biệt hóa thành các tế bào của một mô nhất định.",
+            "Chỉ có khả năng sinh sản vô tính tạo dòng tế bào bất tử.",
+            "Đã biệt hóa hoàn toàn và mất khả năng phân chia."
+        ],
+        correctIndex: 0,
+        explanation: "Tế bào toàn năng (ví dụ: hợp tử và các phôi bào ở giai đoạn phân cắt đầu tiên) có khả năng biệt hóa thành tất cả các loại tế bào của cơ thể, kể cả các mô ngoài phôi (như nhau thai), từ đó phát triển thành một cơ thể hoàn chỉnh."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Trong phân bào giảm nhiễm (Meiosis), hiện tượng tiếp hợp và trao đổi chéo giữa các chromatid khác nguồn xảy ra ở giai đoạn nào?",
+        options: [
+            "Kỳ đầu I (Prophase I).",
+            "Kỳ giữa I (Metaphase I).",
+            "Kỳ sau II (Anaphase II).",
+            "Kỳ đầu II (Prophase II)."
+        ],
+        correctIndex: 0,
+        explanation: "Hiện tượng tiếp hợp và trao đổi chéo (crossing-over) của các cặp NST tương đồng xảy ra ở Kỳ đầu của lần phân bào I (Prophase I). Đây là cơ chế quan trọng tạo ra các biến dị tổ hợp ở sinh vật sinh sản hữu tính."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Cấu trúc vi thể của nhiễm sắc thể: Một nucleosom bao gồm những thành phần nào?",
+        options: [
+            "Lõi 8 phân tử histon (H2A, H2B, H3, H4) được quấn quanh bởi một đoạn ADN dài 146 cặp nucleotid.",
+            "Lõi 4 phân tử histon và một đoạn ADN dài 200 cặp nucleotid.",
+            "Lõi ARN được bao bọc bởi lớp vỏ protein bảo vệ.",
+            "Khung xương phi histon gắn với sợi ADN liên tục."
+        ],
+        correctIndex: 0,
+        explanation: "Nucleosom là đơn vị cấu trúc cơ bản của nhiễm sắc chất, gồm một lõi octamer (8 phân tử protein histon: 2 phân tử mỗi loại H2A, H2B, H3, H4) và một đoạn ADN dài 146 cặp base (bp) quấn 1.75 vòng quanh lõi."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Cơ chế vận chuyển nào sau đây thuộc loại vận chuyển chủ động?",
+        options: [
+            "Thực bào và ẩm bào.",
+            "Khuếch tán trực tiếp qua lớp kép phospholipid.",
+            "Thẩm thấu của nước qua màng.",
+            "Khuếch tán qua kênh protein không tiêu tốn năng lượng."
+        ],
+        correctIndex: 0,
+        explanation: "Vận chuyển chủ động là quá trình tiêu tốn năng lượng (ATP) để đưa vật chất qua màng. Ngoài vận chuyển chủ động qua bơm (như bơm Na-K), các hình thức thực bào (phagocytosis) và ẩm bào (pinocytosis) hay xuất bào đều cần năng lượng để biến dạng màng."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Chất nào sau đây đi qua màng sinh chất (lớp kép lipid) chậm nhất?",
+        options: [
+            "Ion Na+.",
+            "Khí O2.",
+            "Etanol.",
+            "Glycerol."
+        ],
+        correctIndex: 0,
+        explanation: "Các phân tử nhỏ không phân cực (O2, CO2) qua màng rất nhanh. Các phân tử nhỏ có phân cực không mang điện (etanol, nước, glycerol) qua màng chậm hơn. Tuy nhiên, các ion mang điện (Na+, K+, Cl-) hầu như KHÔNG THỂ khuếch tán trực tiếp qua lớp lipid mà phải qua kênh protein."
+    },
+
+    // --- Hóa sinh - Sinh học phân tử ---
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Đặc điểm cấu trúc của Virus gây bệnh khảm thuốc lá (TMV) là gì?",
+        options: [
+            "Phần vỏ ngoài là protein và phần lõi là ARN.",
+            "Phần vỏ ngoài là lipid và phần lõi là ADN.",
+            "Chỉ bao gồm một phân tử ARN trần không có vỏ.",
+            "Lõi là protein và vỏ bao bọc là ARN."
+        ],
+        correctIndex: 0,
+        explanation: "Virus khảm thuốc lá (Tobacco mosaic virus - TMV) có cấu trúc dạng que, với vật chất di truyền ở lõi là chuỗi ARN đơn, được bao bọc bởi một lớp vỏ capsid cấu tạo từ các tiểu đơn vị protein xếp xoắn ốc."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Thí nghiệm của Griffith (chuột và phế cầu khuẩn) chứng minh điều gì?",
+        options: [
+            "Hiện tượng chuyển thể ở vi khuẩn, vật chất di truyền có thể chuyển từ tế bào chết sang tế bào sống.",
+            "ADN là vật chất di truyền duy nhất của mọi sinh vật.",
+            "Protein là vật chất di truyền của vi khuẩn phế cầu.",
+            "Vi khuẩn sinh sản theo phương thức nảy chồi."
+        ],
+        correctIndex: 0,
+        explanation: "Thí nghiệm Griffith (1928) phát hiện 'nhân tố biến nạp' khi tiêm hỗn hợp vi khuẩn S chết do nhiệt và vi khuẩn R sống vào chuột, làm chuột chết. Điều này chứng minh vật chất di truyền từ vi khuẩn S đã truyền sang và làm 'chuyển thể' vi khuẩn R."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Trong quá trình sao chép ADN ở E. coli, enzym nào chịu trách nhiệm tổng hợp các đoạn Okazaki trên sợi chậm?",
+        options: [
+            "ADN Polymerase III.",
+            "ADN Ligase.",
+            "ADN Polymerase I.",
+            "Helicase."
+        ],
+        correctIndex: 0,
+        explanation: "ADN Polymerase III là enzym chính xúc tác kéo dài chuỗi polynucleotid mới ở cả sợi dẫn đầu và sợi chậm (tạo đoạn Okazaki). ADN Ligase có nhiệm vụ nối các đoạn Okazaki, còn Helicase làm nhiệm vụ tháo xoắn."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Sản phẩm quan trọng của quá trình chuyển hóa đường theo con đường Hexose Monophosphat (HMP shunt) là gì?",
+        options: [
+            "Cung cấp NADPH và Ribose-5-phosphat.",
+            "Cung cấp NADH và FADH2 cho chuỗi hô hấp.",
+            "Sinh ra rất nhiều năng lượng dưới dạng ATP.",
+            "Tạo ra Lactat và Pyruvat."
+        ],
+        correctIndex: 0,
+        explanation: "Con đường HMP không sinh ATP. Mục tiêu chính của nó là tạo ra NADPH (dùng làm chất khử trong sinh tổng hợp lipid, cholesterol, chống oxy hóa) và Ribose-5-phosphat (tiền chất tổng hợp nucleotid)."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Nguyên nhân sinh hóa gây ra bệnh Porphyrin (Porphyria) là gì?",
+        options: [
+            "Khiếm khuyết hoặc thiếu hụt các enzym tham gia quá trình sinh tổng hợp Hem.",
+            "Đột biến gen làm sai lệch cấu trúc chuỗi Globin.",
+            "Thiếu sắt trong khẩu phần ăn hàng ngày.",
+            "Sự phá hủy tế bào hồng cầu quá mức do kháng thể tự miễn."
+        ],
+        correctIndex: 0,
+        explanation: "Bệnh Porphyrin (Porphyria) là nhóm bệnh rối loạn chuyển hóa do thiếu hụt một trong các enzym trong con đường sinh tổng hợp Hem, dẫn đến tích tụ các tiền chất porphyrin gây độc cho hệ thần kinh hoặc da."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Loại đường nào cấu tạo nên phân tử ADN và ARN?",
+        options: [
+            "Deoxyribose (trong ADN) và Ribose (trong ARN).",
+            "Ribose (trong ADN) và Deoxyribose (trong ARN).",
+            "Glucose (trong ADN) và Fructose (trong ARN).",
+            "Galactose (trong ADN) và Mannose (trong ARN)."
+        ],
+        correctIndex: 0,
+        explanation: "Đường pentose cấu tạo nên nucleotid của ADN là đường Deoxyribose (mất 1 nguyên tử oxy ở vị trí C2'). Đường trong ARN là đường Ribose."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Quá trình dịch mã (sinh tổng hợp protein) ở Eukaryota được bắt đầu bằng phức hợp mở đầu mang acid amin nào?",
+        options: [
+            "Methionin (Met).",
+            "Formyl-Methionin (fMet).",
+            "Valin (Val).",
+            "Leucin (Leu)."
+        ],
+        correctIndex: 0,
+        explanation: "Ở Eukaryota (sinh vật nhân thực), mã mở đầu AUG mã hóa cho acid amin Methionin. Ở Prokaryota (vi khuẩn), mã AUG mã hóa cho Formyl-Methionin (fMet)."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Kỹ thuật PCR (Polymerase Chain Reaction) đòi hỏi enzym mồi là loại gì?",
+        options: [
+            "Không cần enzym mồi, PCR sử dụng mồi là các đoạn Oligonucleotid tổng hợp nhân tạo (ADN mồi).",
+            "Sử dụng ARN Primase để tạo ARN mồi.",
+            "Sử dụng ADN Ligase để mồi phản ứng.",
+            "Sử dụng enzym cắt giới hạn (Restriction enzyme)."
+        ],
+        correctIndex: 0,
+        explanation: "Khác với sao chép ADN tự nhiên cần ARN Primase tạo ARN mồi, kỹ thuật PCR in vitro sử dụng các đoạn mồi ADN (primers) tổng hợp sẵn đặc hiệu cho hai đầu đoạn gen cần khuếch đại."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Cơ chế hoạt động của Operon Lac (Mô hình kìm hãm) ở E. coli khi môi trường CÓ Lactose:",
+        options: [
+            "Lactose gắn vào protein kìm hãm làm thay đổi cấu trúc, protein này rời khỏi vùng Operator (O), cho phép ARN polymerase phiên mã gen cấu trúc.",
+            "Lactose gắn vào vùng Promotor (P) kích hoạt enzym ARN polymerase hoạt động mạnh.",
+            "Lactose gắn vào mARN làm quá trình dịch mã diễn ra nhanh hơn.",
+            "Protein kìm hãm gắn chặt hơn vào vùng Operator (O) ngăn cản sự phiên mã."
+        ],
+        correctIndex: 0,
+        explanation: "Theo mô hình Jacob và Monod, khi có Lactose (chất cảm ứng), nó sẽ liên kết với protein kìm hãm (Repressor), làm biến đổi cấu hình không gian khiến protein này mất khả năng bám vào vùng vận hành (Operator). Gen được mở để tổng hợp enzym phân giải lactose."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Chất vận chuyển Hem (Bilirubin tự do) trong máu là gì?",
+        options: [
+            "Albumin.",
+            "Hemoglobin.",
+            "Globulin.",
+            "Transferrin."
+        ],
+        correctIndex: 0,
+        explanation: "Bilirubin tự do (gián tiếp) là sản phẩm thoái hóa của Hem, nó không tan trong nước nên trong huyết tương phải gắn kết với protein Albumin để được vận chuyển về gan."
+    },
+
+    // --- Di truyền y học ---
+    {
+        category: "Di truyền y học",
+        question: "NST Philadelphia (Ph1) liên quan chặt chẽ đến bệnh lý nào và cơ chế do đâu?",
+        options: [
+            "Bệnh bạch cầu tủy mạn tính; do chuyển đoạn tương hỗ t(9;22).",
+            "Bệnh bạch cầu lympho cấp; do mất đoạn nhánh ngắn NST số 5.",
+            "U nguyên bào võng mạc; do đột biến mất đoạn NST số 13.",
+            "Hội chứng Down; do chuyển đoạn hòa hợp tâm t(14;21)."
+        ],
+        correctIndex: 0,
+        explanation: "NST Philadelphia (Ph1) là một NST 22 bị ngắn đi do chuyển đoạn tương hỗ giữa nhánh dài NST số 9 và nhánh dài NST 22. Hiện tượng t(9;22) này tạo ra gen dung hợp BCR-ABL, là nguyên nhân chính gây bệnh bạch cầu tủy mạn tính (CML)."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Bố mẹ mang NST chuyển đoạn cân bằng (hòa hợp tâm 14;21) sinh con, tỷ lệ con sinh ra sống mang kiểu hình hội chứng Down là bao nhiêu?",
+        options: [
+            "1/3.",
+            "1/4.",
+            "1/2.",
+            "100%."
+        ],
+        correctIndex: 0,
+        explanation: "Về mặt lý thuyết, giao tử kết hợp tạo 4 loại hợp tử: 1 bình thường, 1 mang chuyển đoạn cân bằng, 1 trisomy 21 (Down), 1 monosomy 21. Tuy nhiên hợp tử monosomy 21 sẽ chết lưu sẩy thai sớm. Do đó, trong số thai nhi sinh ra sống, có tỷ lệ 1/3 bình thường, 1/3 lành mang gen chuyển đoạn, và 1/3 mắc hội chứng Down (Down do chuyển đoạn)."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Đặc điểm Karyotype và biểu hiện lâm sàng của Hội chứng Turner là gì?",
+        options: [
+            "45,X; Nữ giới, lùn, tuyến sinh dục không phát triển (dải xơ trắng), vô kinh.",
+            "47,XXY; Nam giới, vô sinh, tinh hoàn nhỏ, có thể vú to.",
+            "47,XXX; Nữ giới, hình thái bình thường nhưng trí tuệ kém.",
+            "47,+21; Nam hoặc nữ, mặt tròn, mắt xếch, trí tuệ kém."
+        ],
+        correctIndex: 0,
+        explanation: "Hội chứng Turner có bộ nhiễm sắc thể thiếu một NST giới tính (45,X hoặc 45,XO). Bệnh nhân mang kiểu hình nữ nhưng buồng trứng thoái hóa thành dải xơ, vóc dáng thấp bé, cổ rụt/nếp da cổ, nhi tính và vô sinh."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Nguyên nhân gây bệnh Tăng cholesterol huyết có tính chất gia đình là gì?",
+        options: [
+            "Do đột biến gen mã hóa thụ thể LDL nằm trên nhiễm sắc thể số 19.",
+            "Do đột biến gen mã hóa Hemoglobin trên nhiễm sắc thể số 11.",
+            "Do ăn quá nhiều chất béo động vật từ nhỏ.",
+            "Do vi khuẩn đường ruột phá hủy các enzym tiêu hóa mỡ."
+        ],
+        correctIndex: 0,
+        explanation: "Bệnh di truyền trội trên NST thường. Do đột biến gen trên NST 19 mã hóa cho receptor tế bào màng nhận diện LDL. Hậu quả là LDL không vào được tế bào, ứ đọng trong máu gây xơ vữa động mạch từ rất sớm."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Bệnh Hemophilia A (Máu khó đông) có đặc điểm di truyền như thế nào?",
+        options: [
+            "Di truyền do gen lặn nằm trên NST giới tính X; thiếu hụt yếu tố đông máu VIII.",
+            "Di truyền do gen trội nằm trên NST thường; thiếu hụt yếu tố đông máu IX.",
+            "Di truyền do gen lặn nằm trên NST thường; thiếu hụt yếu tố đông máu VIII.",
+            "Di truyền do đột biến gen ty thể; tiểu cầu giảm."
+        ],
+        correctIndex: 0,
+        explanation: "Hemophilia A là bệnh di truyền lặn liên kết NST X, đặc trưng bởi sự thiếu hụt yếu tố đông máu VIII. Bệnh chủ yếu biểu hiện ở nam giới (XY) nhận gen bệnh từ mẹ mang gen ẩn."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Thể nặng nhất của bệnh alpha-thalassemia (kiểu gen --/--) sẽ dẫn đến hậu quả gì?",
+        options: [
+            "Tạo Hb Bart's (gồm 4 chuỗi gamma), gây phù thai, thai chết lưu hoặc tử vong ngay sau sinh.",
+            "Tạo HbH (gồm 4 chuỗi beta), người bệnh thiếu máu nặng nhưng sống đến tuổi trưởng thành.",
+            "Tạo HbS, hồng cầu hình lưỡi liềm gây tắc mạch.",
+            "Người mang gen lặn, không có biểu hiện lâm sàng."
+        ],
+        correctIndex: 0,
+        explanation: "Bình thường có 4 gen alpha. Nếu mất cả 4 gen (--/--), thai nhi không thể tạo chuỗi alpha để ghép với chuỗi gamma thành HbF. Thay vào đó, 4 chuỗi gamma ghép lại thành Hb Bart's, loại Hb này giữ oxy rất chặt không nhả cho mô, gây thiếu máu mô trầm trọng, thai phù và chết sớm."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Trong hệ nhóm máu ABO, người có nhóm máu O (kiểu gen ii) nhưng lại không có kháng nguyên H trên màng hồng cầu được gọi là hiện tượng gì?",
+        options: [
+            "Hiện tượng nhóm máu Bombay (kiểu gen hh).",
+            "Hiện tượng đa alen.",
+            "Hiện tượng trội không hoàn toàn.",
+            "Hiện tượng đột biến gen cấu trúc nhóm máu O."
+        ],
+        correctIndex: 0,
+        explanation: "Gen H quy định tổng hợp kháng nguyên H (chất tiền thân để gắn nhóm đường A, B). Ở người kiểu gen đồng hợp lặn hh (Bombay phenotype), không có kháng nguyên H nên dù có gen A hay B cũng không thể biểu hiện thành kháng nguyên A/B, xét nghiệm máu bề ngoài sẽ giống nhóm máu O."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Cơ chế di truyền của bệnh Phenylketon niệu (PKU) là gì?",
+        options: [
+            "Do gen lặn nằm trên NST thường, thiếu enzym chuyển hóa Phenylalanin thành Tyrosin.",
+            "Do gen trội nằm trên NST thường, cơ thể sản xuất quá nhiều Phenylalanin.",
+            "Do gen lặn nằm trên NST X, rối loạn chuyển hóa đường Galactose.",
+            "Do đột biến NST (trisomy 21)."
+        ],
+        correctIndex: 0,
+        explanation: "PKU là bệnh di truyền đơn gen lặn trên NST thường. Người bệnh thiếu enzym Phenylalanin hydroxylase (PAH) làm Phenylalanin tích tụ trong máu, chuyển thành acid phenylpyruvic độc hại cho não gây thiểu năng trí tuệ nếu không kiêng ăn Phenylalanin từ sơ sinh."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Karyotype của người mắc hội chứng Patau và Edwards lần lượt là?",
+        options: [
+            "Trisomy 13 (47,+13) và Trisomy 18 (47,+18).",
+            "Trisomy 18 (47,+18) và Trisomy 13 (47,+13).",
+            "Trisomy 21 (47,+21) và Monosomy X (45,X).",
+            "XXY (47,XXY) và XYY (47,XYY)."
+        ],
+        correctIndex: 0,
+        explanation: "Hội chứng Patau do thừa một NST 13 (Trisomy 13), gây dị tật sứt môi nứt vòm, đa ngón, dị tật não/tim nặng. Hội chứng Edwards do thừa NST 18 (Trisomy 18), trẻ sinh ra ngón tay trỏ và út gập đè lên ngón giữa, bàn chân vẹo, dị tật tim mạch."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Xét nghiệm tế bào học, trong hội chứng Klinefelter (47,XXY), số lượng vật thể Barr được tìm thấy trong nhân tế bào soma là bao nhiêu?",
+        options: [
+            "1 vật thể Barr.",
+            "0 vật thể Barr.",
+            "2 vật thể Barr.",
+            "3 vật thể Barr."
+        ],
+        correctIndex: 0,
+        explanation: "Số lượng vật thể Barr (NST X bị bất hoạt) bằng Tổng số NST X trừ đi 1. Bệnh nhân Klinefelter có 2 NST X (XXY), do đó số lượng vật thể Barr là 2 - 1 = 1."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Hội chứng 'Mèo kêu' (Cri-du-chat) có nguyên nhân di truyền học là gì?",
+        options: [
+            "Mất đoạn nhánh ngắn NST số 5 (del 5p).",
+            "Mất đoạn nhánh dài NST số 13.",
+            "Lặp đoạn nhánh ngắn NST số 9.",
+            "Chuyển đoạn tương hỗ 9;22."
+        ],
+        correctIndex: 0,
+        explanation: "Hội chứng Mèo kêu là một ví dụ kinh điển của đột biến cấu trúc mất đoạn NST. Bệnh nhân bị mất một phần nhánh ngắn của NST số 5 (5p-). Biểu hiện đặc trưng là tiếng khóc ở trẻ sơ sinh the thé giống tiếng mèo kêu, chậm phát triển trí tuệ và dị phẫu thanh quản."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Karyotype của người mắc hội chứng Lưỡng giới thật thường gặp những dạng nào?",
+        options: [
+            "46,XX hoặc các thể khảm 46,XX/46,XY.",
+            "Chỉ gặp 47,XXY.",
+            "Chỉ gặp 45,X.",
+            "46,XY kết hợp đột biến receptor Androgen."
+        ],
+        correctIndex: 0,
+        explanation: "Lưỡng giới thật là cơ thể có cả tổ chức tinh hoàn và buồng trứng (có thể là noãn-tinh hoàn). Đa số bệnh nhân (khoảng 60-70%) có karyotype là 46,XX, phần còn lại là thể khảm 46,XX/46,XY hoặc 46,XY."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Độ di truyền (H) trong di truyền đa nhân tố phản ánh điều gì?",
+        options: [
+            "Tỷ lệ phần trăm vai trò của di truyền (kiểu gen) trong việc hình thành tính trạng/bệnh tật so với môi trường.",
+            "Khả năng đột biến của một gen lặn truyền cho thế hệ sau.",
+            "Độ thấm của gen trội trong một quần thể định trước.",
+            "Mức độ tổn thương của NST dưới tác động của phóng xạ."
+        ],
+        correctIndex: 0,
+        explanation: "Độ di truyền H được tính qua phương pháp nghiên cứu con sinh đôi, đo lường phần đóng góp của yếu tố di truyền vào sự biểu hiện của kiểu hình. H = 100% nghĩa là hoàn toàn do gen quyết định, H = 0% nghĩa là hoàn toàn do môi trường."
+    },
+    {
+        category: "Di truyền y học",
+        question: "Kỹ thuật lai tại chỗ huỳnh quang (FISH) thường được ứng dụng để làm gì?",
+        options: [
+            "Xác định vị trí chính xác của một đoạn gen hoặc phát hiện các đột biến mất đoạn/chuyển đoạn NST siêu vi thể.",
+            "Giải trình tự toàn bộ bộ gen người.",
+            "Tách chiết mARN từ bào tương.",
+            "Xác định cấu trúc bậc 3 của protein màng."
+        ],
+        correctIndex: 0,
+        explanation: "FISH (Fluorescence in situ hybridization) dùng đoạn ADN dò (probe) đánh dấu huỳnh quang để lai với NST trên tiêu bản. Giúp phát hiện nhanh lệch bội, mất đoạn nhỏ (vi mất đoạn) hoặc gene dung hợp mà nhuộm băng G thông thường không thấy."
+    },
+
+    // --- Sinh học phát triển ---
+    {
+        category: "Sinh học phát triển",
+        question: "Trong quá trình phôi vị hóa, Lá thai ngoài (Ectoderm) sẽ biệt hóa thành những cơ quan nào của cơ thể?",
+        options: [
+            "Hệ thần kinh, da và các phụ thuộc của da (lông, tóc, móng).",
+            "Hệ hô hấp, gan, tụy và ống tiêu hóa.",
+            "Hệ xương, cơ, máu và thận.",
+            "Toàn bộ nhau thai và màng ối."
+        ],
+        correctIndex: 0,
+        explanation: "Lá thai ngoài (Ngoại bì) là nguồn gốc hình thành lớp biểu bì da, các tuyến da, lông tóc và toàn bộ hệ thống thần kinh (não, tủy sống, dây thần kinh)."
+    },
+    {
+        category: "Sinh học phát triển",
+        question: "Lá thai trong (Endoderm) của phôi đóng vai trò hình thành hệ cơ quan nào?",
+        options: [
+            "Hệ hô hấp và biểu mô hệ tiêu hóa (kể cả gan, tụy).",
+            "Hệ cơ, hệ xương và hệ tuần hoàn.",
+            "Hệ thần kinh trung ương.",
+            "Biểu bì da và giác mạc mắt."
+        ],
+        correctIndex: 0,
+        explanation: "Lá thai trong (Nội bì) hình thành nên lớp biểu mô lót của ống tiêu hóa, đường hô hấp, bàng quang và các tuyến tiêu hóa lớn như gan, tụy."
+    },
+    {
+        category: "Sinh học phát triển",
+        question: "Giai đoạn phân cắt của trứng người (trứng vô hoàng) có đặc điểm gì?",
+        options: [
+            "Phân cắt hoàn toàn, không đều; một phần tế bào tạo lá nuôi phôi, một phần tạo mầm phôi.",
+            "Phân cắt toàn bộ và rất đều, kích thước các phôi bào hoàn toàn bằng nhau.",
+            "Chỉ phân cắt ở đĩa phôi (cực sinh vật), khối noãn hoàng không phân chia.",
+            "Phân cắt bề mặt, nhân phân chia nhiều lần rồi mới tạo vách ngăn."
+        ],
+        correctIndex: 0,
+        explanation: "Trứng động vật có vú (vô hoàng) phân cắt hoàn toàn nhưng không đều. Đặc biệt ở giai đoạn phôi nang, nó phân hóa thành 2 nhóm tế bào: khối tế bào mầm bên trong (tạo phôi thai) và nguyên bào nuôi (lá nuôi, trophoblast - sẽ tạo thành nhau thai)."
+    },
+    {
+        category: "Sinh học phát triển",
+        question: "Cấu tạo tinh trùng: Bộ phận nào chứa enzym thủy phân giúp tinh trùng xuyên qua màng trứng?",
+        options: [
+            "Thể đỉnh (Acrosome) nằm ở đầu tinh trùng.",
+            "Lò xo ty thể nằm ở đoạn giữa.",
+            "Nhân tinh trùng nằm ở đầu.",
+            "Dây sợi trục (axoneme) ở đuôi."
+        ],
+        correctIndex: 0,
+        explanation: "Thể đỉnh (Acrosome) có nguồn gốc từ bộ máy Golgi, giống như một tiêu thể khổng lồ chứa các enzym (hyaluronidase, acrosin) giúp tiêu hủy các màng bao bọc noãn khi xảy ra thụ tinh."
+    },
+    {
+        category: "Sinh học phát triển",
+        question: "Cơ chế 'Giải kìm hãm gen' trong quá trình biệt hóa tế bào và phát triển phôi có nghĩa là gì?",
+        options: [
+            "Sự biến đổi về mặt hóa sinh (lượng) tiến tới thay đổi hình thái, cho phép một nhóm gen đặc thù hoạt động để tổng hợp protein chuyên biệt.",
+            "Làm cho toàn bộ bộ gen của tế bào mất khả năng phiên mã vĩnh viễn.",
+            "Kích hoạt cái chết tế bào có chương trình ở các phôi bào già cỗi.",
+            "Chỉ xảy ra ở hợp tử trước khi bắt đầu lần phân chia đầu tiên."
+        ],
+        correctIndex: 0,
+        explanation: "Trong phôi, mọi tế bào đều có bộ gen giống nhau. Sự biệt hóa xảy ra khi có các tín hiệu cảm ứng làm 'giải kìm hãm' (mở) một số operon/gen chuyên biệt, khiến chúng được phiên mã thành protein, làm thay đổi cấu trúc và chức năng tế bào."
+    },
+
+    // --- Bổ sung đa dạng ---
+    {
+        category: "Di truyền y học",
+        question: "Sự khác biệt giữa di truyền trội trên NST thường và di truyền trội liên kết NST X?",
+        options: [
+            "Bố mắc bệnh (trội liên kết X) sẽ truyền bệnh cho 100% con gái và không truyền cho con trai. Bố mắc bệnh (trội NST thường) truyền bệnh cho con trai/con gái tỷ lệ ngang nhau.",
+            "Bệnh trội liên kết X chỉ gặp ở nữ giới, bệnh trội NST thường chỉ gặp ở nam giới.",
+            "Bệnh trội liên kết X luôn gây chết phôi, bệnh trội NST thường thì không.",
+            "Không có sự khác biệt về tỷ lệ di truyền cho đời sau."
+        ],
+        correctIndex: 0,
+        explanation: "Với gen bệnh trội trên NST X (X^A), nam giới (X^AY) khi sinh con sẽ truyền Y cho con trai (bình thường) và X^A cho tất cả con gái (100% con gái bệnh). Với gen trội trên NST thường (Aa), xác suất di truyền cho con trai và con gái là 50% ngang nhau."
+    },
+    {
+        category: "Hóa sinh - Sinh học phân tử",
+        question: "Mã di truyền có tính thoái hóa (hay tính dư thừa) nghĩa là gì?",
+        options: [
+            "Nhiều bộ ba (codon) khác nhau có thể cùng mã hóa cho một loại acid amin.",
+            "Một bộ ba có thể mã hóa cho nhiều loại acid amin khác nhau.",
+            "Mã di truyền bị thay đổi theo sự tiến hóa của loài.",
+            "Mã di truyền được đọc theo nhiều khung đọc khác nhau trên cùng 1 mARN."
+        ],
+        correctIndex: 0,
+        explanation: "Có 64 codon nhưng chỉ có 20 acid amin. Do đó, trừ Met và Trp chỉ có 1 codon, các acid amin còn lại được mã hóa bởi 2-6 codon khác nhau. Đây gọi là tính thoái hóa của mã di truyền."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Thành phần cấu trúc nào làm cho màng tế bào có 'tính lỏng' ở tế bào động vật?",
+        options: [
+            "Lớp kép Phospholipid và Cholesterol.",
+            "Sợi Actin dưới màng.",
+            "Glycocalyx (Carbohydrate màng).",
+            "Protein xuyên màng."
+        ],
+        correctIndex: 0,
+        explanation: "Màng sinh chất theo mô hình khảm động. 'Tính lỏng' được tạo ra bởi sự chuyển động của các phân tử phospholipid. Cholesterol nằm xen kẽ trong lớp kép lipid có vai trò như một 'đệm nhiệt độ', ngăn màng quá lỏng khi nóng và chống đông cứng khi lạnh."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Quá trình sinh tổng hợp chuỗi polypeptid diễn ra ở đâu trong tế bào?",
+        options: [
+            "Ribosome trong bào tương hoặc trên lưới nội sinh chất hạt.",
+            "Bên trong nhân tế bào.",
+            "Trong chất nền của bộ máy Golgi.",
+            "Trong lòng của lưới nội sinh chất nhẵn."
+        ],
+        correctIndex: 0,
+        explanation: "Quá trình dịch mã (sinh tổng hợp protein) xảy ra tại Ribosome. Ribosome tự do tổng hợp protein dùng trong nội bào, trong khi ribosome bám trên lưới nội sinh chất hạt tổng hợp protein tiết ra ngoài, protein màng hoặc enzym tiêu thể."
+    },
+    {
+        category: "Sinh học tế bào",
+        question: "Sự phân chia tế bào chất (Cytokinesis) ở tế bào động vật diễn ra bằng cơ chế nào?",
+        options: [
+            "Hình thành eo thắt (vòng thắt actin-myosin) chia cắt màng tế bào từ ngoài vào trong.",
+            "Hình thành vách ngăn xenlulozo từ giữa tế bào lan ra ngoài màng.",
+            "Sự tự vỡ màng tế bào mẹ để giải phóng 2 nhân con.",
+            "Bộ máy Golgi tiết các túi phôi kết hợp lại thành màng mới."
+        ],
+        correctIndex: 0,
+        explanation: "Ở tế bào động vật, sự phân chia tế bào chất xảy ra nhờ sự co thắt của một vòng vi sợi (actin và myosin) nằm dưới màng sinh chất ở mặt phẳng xích đạo, thắt màng lại cho đến khi đứt làm hai tế bào con."
+    }
+];
+
+// --- APP STATE ---
+let questions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let userAnswers = []; // store user selections: { selectedText: string, isCorrect: boolean }
+
+// --- DOM ELEMENTS ---
+const setupScreen = document.getElementById('setup-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const questionText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+const checkBtn = document.getElementById('check-btn');
+const explanationBox = document.getElementById('explanation-box');
+const explanationText = document.getElementById('explanation-text');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const questionCounter = document.getElementById('question-counter');
+const categoryBadge = document.getElementById('q-category');
+const scoreDisplay = document.getElementById('score-display');
+const headerScore = document.getElementById('header-score');
+
+// --- UTILS ---
+function shuffleArray(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
+
+// --- LOGIC ---
+function startQuiz() {
+    const category = document.getElementById('category-select').value;
+    const isShuffleQuestions = document.getElementById('shuffle-questions').checked;
+    const isShuffleAnswers = document.getElementById('shuffle-answers').checked;
+
+    // Filter
+    let filteredQ = originalQuestions;
+    if (category !== 'all') {
+        filteredQ = originalQuestions.filter(q => q.category === category);
+    }
+
+    // Deep copy so we don't modify original data
+    questions = JSON.parse(JSON.stringify(filteredQ));
+
+    // Handle Answer Shuffle (do it ONCE at start so going back/forth preserves option order)
+    if (isShuffleAnswers) {
+        questions.forEach(q => {
+            // map options to objects containing text and isCorrect flag
+            let opts = q.options.map((text, i) => ({ text: text, isCorrect: i === q.correctIndex }));
+            shuffleArray(opts);
+            // reconstruct options array and find new correctIndex
+            q.options = opts.map(o => o.text);
+            q.correctIndex = opts.findIndex(o => o.isCorrect);
+        });
+    }
+
+    // Handle Question Shuffle
+    if (isShuffleQuestions) {
+        shuffleArray(questions);
+    }
+
+    // Reset State
+    currentQuestionIndex = 0;
+    score = 0;
+    userAnswers = new Array(questions.length).fill(null);
+    updateScoreUI();
+
+    // Toggle Screens
+    setupScreen.classList.add('hidden');
+    quizScreen.classList.remove('hidden');
+    quizScreen.classList.add('flex');
+    headerScore.classList.remove('hidden');
+
+    renderQuestion();
+}
+
+function endQuiz() {
+    setupScreen.classList.remove('hidden');
+    quizScreen.classList.add('hidden');
+    quizScreen.classList.remove('flex');
+    headerScore.classList.add('hidden');
+    window.scrollTo(0,0);
+}
+
+function renderQuestion() {
+    const q = questions[currentQuestionIndex];
+    const prevAnswer = userAnswers[currentQuestionIndex];
+    
+    // Update Headers
+    questionCounter.innerText = `Câu ${currentQuestionIndex + 1} / ${questions.length}`;
+    categoryBadge.innerText = q.category;
+    questionText.innerText = q.question;
+
+    // Render Options
+    optionsContainer.innerHTML = '';
+    q.options.forEach((optText, index) => {
+        const btn = document.createElement('button');
+        btn.className = `option-btn block w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300`;
+        btn.innerHTML = `<span class="font-bold mr-2">${String.fromCharCode(65 + index)}.</span> ${optText}`;
+        
+        // If question already answered
+        if (prevAnswer) {
+            btn.classList.add('disabled-option');
+            if (index === q.correctIndex) {
+                btn.classList.add('correct'); // Highlight correct answer
+            } else if (optText === prevAnswer.selectedText && !prevAnswer.isCorrect) {
+                btn.classList.add('incorrect'); // Highlight wrong selection
+            }
+        } else {
+            btn.onclick = () => selectOption(index);
+        }
+        
+        optionsContainer.appendChild(btn);
+    });
+
+    // Reset UI states
+    explanationBox.classList.add('hidden');
+    checkBtn.disabled = true;
+    checkBtn.onclick = () => checkAnswer(q);
+    
+    // Restore UI if already answered
+    if (prevAnswer) {
+        checkBtn.classList.add('hidden');
+        explanationText.innerText = q.explanation;
+        explanationBox.classList.remove('hidden');
+    } else {
+        checkBtn.classList.remove('hidden');
+    }
+
+    // Nav Buttons State
+    prevBtn.disabled = currentQuestionIndex === 0;
+    
+    // Change next button to Finish if last question
+    if (currentQuestionIndex === questions.length - 1) {
+        nextBtn.innerText = "Hoàn thành";
+        nextBtn.classList.replace('bg-blue-600', 'bg-green-600');
+        nextBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+    } else {
+        nextBtn.innerText = "Câu tiếp theo \u2192";
+        nextBtn.classList.replace('bg-green-600', 'bg-blue-600');
+        nextBtn.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+    }
+}
+
+let currentlySelectedOptionIndex = -1;
+
+function selectOption(index) {
+    currentlySelectedOptionIndex = index;
+    const btns = optionsContainer.children;
+    for(let i=0; i<btns.length; i++) {
+        btns[i].classList.remove('selected');
+        if(i === index) btns[i].classList.add('selected');
+    }
+    checkBtn.disabled = false;
+}
+
+function checkAnswer() {
+    const q = questions[currentQuestionIndex];
+    const btns = optionsContainer.children;
+    const isCorrect = (currentlySelectedOptionIndex === q.correctIndex);
+    
+    // Disable all options
+    for(let i=0; i<btns.length; i++) {
+        btns[i].classList.add('disabled-option');
+        btns[i].onclick = null;
+        
+        if (i === q.correctIndex) {
+            btns[i].classList.add('correct');
+        } else if (i === currentlySelectedOptionIndex && !isCorrect) {
+            btns[i].classList.add('incorrect');
+        }
+    }
+
+    // Update Score
+    if (isCorrect) score++;
+    updateScoreUI();
+
+    // Save state
+    userAnswers[currentQuestionIndex] = {
+        selectedText: q.options[currentlySelectedOptionIndex],
+        isCorrect: isCorrect
+    };
+
+    // Show explanation & hide check btn
+    explanationText.innerText = q.explanation;
+    explanationBox.classList.remove('hidden');
+    checkBtn.classList.add('hidden');
+}
+
+function navigate(direction) {
+    if (direction === 1 && currentQuestionIndex === questions.length - 1) {
+        alert(`Chúc mừng! Bạn đã hoàn thành bài ôn tập.\nSố điểm: ${score}/${questions.length}`);
+        endQuiz();
+        return;
+    }
+    
+    currentQuestionIndex += direction;
+    renderQuestion();
+}
+
+function updateScoreUI() {
+    scoreDisplay.innerText = `${score}/${questions.length}`;
+}
+
+// Disable text selection/copying as usually requested in test banks (optional, applied to body)
+// document.body.style.userSelect = "none";
+</script>
+</body>
+</html>
